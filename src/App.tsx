@@ -85,8 +85,8 @@ function App() {
 
       if (distanceConfiguration?.start) {
         context.arc(
-          distanceConfiguration.start[0] - 5 / scale,
-          distanceConfiguration.start[1] - 47 / scale,
+          distanceConfiguration.start[0] - 5,
+          distanceConfiguration.start[1] - 47,
           20,
           0,
           2 * Math.PI
@@ -94,8 +94,8 @@ function App() {
         context.fill()
         if (distanceConfiguration.end) {
           context.arc(
-            distanceConfiguration.end[0] - 5 / scale,
-            distanceConfiguration.end[1] - 47 / scale,
+            distanceConfiguration.end[0] - 5,
+            distanceConfiguration.end[1] - 47,
             20,
             0,
             2 * Math.PI
@@ -103,12 +103,12 @@ function App() {
           context.fill()
           context.beginPath()
           context.moveTo(
-            distanceConfiguration.start[0] - 5 / scale,
-            distanceConfiguration.start[1] - 47 / scale
+            distanceConfiguration.start[0] - 5,
+            distanceConfiguration.start[1] - 47
           )
           context.lineTo(
-            distanceConfiguration.end[0] - 5 / scale,
-            distanceConfiguration.end[1] - 47 / scale
+            distanceConfiguration.end[0] - 5,
+            distanceConfiguration.end[1] - 47
           )
           context.stroke()
           context.closePath()
