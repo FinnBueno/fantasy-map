@@ -37,6 +37,8 @@ function App() {
   const [distanceConfiguration, setDistanceConfiguration] = useState<DistanceConfiguration>({ start: [0,0], end: [0,0], pixelToMiles: 0 })
 
   const [path, setPath] = useState<PathConfiguration>({ finished: false, points: [] })
+  
+  const [reload, setReload] = useState<number>(Date.now())
 
   const draw = (
     context: CanvasRenderingContext2D,
@@ -65,6 +67,52 @@ function App() {
           canvasHeight / 2 - mapImage.height / 2
         )
       }
+
+      // hex grid
+      console.log('Scale', scale)
+      if (distanceConfiguration.pixelToMiles && mapImage && scale > 3) {
+        context.lineWidth = 2
+        // context.strokeRect(
+        //   mapImage.width,
+        //   mapImage.height
+        // )
+        let hexWidth = 12 * distanceConfiguration.pixelToMiles
+        // console.log(hexWidth, mapImage?.width, mapImage?.height)
+        const startX = canvasWidth / 2 - mapImage.width / 2
+        const startY = canvasHeight / 2 - mapImage.height / 2
+        const radius = hexWidth
+        const heightDiffPerHex = radius * Math.sin(Math.PI / 3)
+
+        let i = 0
+        for (let y = 4; y < (mapImage?.height || 0); y += hexWidth + heightDiffPerHex - 2) {
+          // context.strokeStyle = ['gray', 'red', 'blue', 'green', 'orange'][j % 5]
+          context.strokeStyle = "#3f3f3f40"
+          for (let x = 4; x < (mapImage?.width || 0); x += radius + radius * Math.cos(Math.PI / 3)) {
+            i++
+            if (
+              startX + x < viewportTopLeft.x - 20 ||
+              startX + x > viewportTopLeft.x + (ref!.current!.offsetWidth / scale) * 2 + 20 ||
+              startY + y < viewportTopLeft.y - 20 ||
+              startY + y > viewportTopLeft.y + (ref!.current!.offsetHeight / scale) * 2 + 20
+
+            ) continue
+            // context.strokeRect(
+            //   startX + x,
+            //   startY + y - 4,
+            //   hexWidth,
+            //   hexWidth,
+            // )
+            drawHexagon(
+              startX + x,
+              startY + y - 4 + (i % 2 === 0 ? 0 : heightDiffPerHex),
+              radius,
+              context
+            )
+          }
+          i = 0
+        }
+      }
+
       const distance = pathDistance(path, distanceConfiguration.pixelToMiles)
       // context.arc(viewportTopLeft.x, viewportTopLeft.y, 5, 0, 2 * Math.PI);
       context.font = `${32 / scale}px serif`
@@ -72,18 +120,20 @@ function App() {
       const textWidth = context.measureText(`Pixel to Miles: 1 pixel = ${Math.floor(distanceConfiguration.pixelToMiles * 1000) / 1000} miles`).width + 20 / scale
       context.fillRect(viewportTopLeft.x, viewportTopLeft.y, textWidth, 220 / scale)
       context.fillStyle = "black";
-      context.fillText(`Path distance: ${distance} miles / ${Math.ceil(distance) / 24} days`, viewportTopLeft.x + 10 / scale, viewportTopLeft.y + 35 / scale)
+      context.fillText(`Path distance: ${Math.floor(distance * 100) / 100} miles / ${Math.ceil(distance / 48 * 10) / 10} days`, viewportTopLeft.x + 10 / scale, viewportTopLeft.y + 35 / scale)
       context.fillText(`Zoom: ${scale}`, viewportTopLeft.x + 10 / scale, viewportTopLeft.y + 75 / scale)
       context.fillText(`TopLeft: ${Math.floor(viewportTopLeft.x)}, ${Math.floor(viewportTopLeft.y)}`, viewportTopLeft.x + 10 / scale, viewportTopLeft.y + 115 / scale)
       context.fillText(`Size: ${Math.floor(screenSize.width)}, ${Math.floor(screenSize.height)}`, viewportTopLeft.x + 10 / scale, viewportTopLeft.y + 155 / scale)
       context.fillText(`Pixel to Miles: 1 pixel = ${Math.floor(distanceConfiguration.pixelToMiles * 1000) / 1000} miles`, viewportTopLeft.x + 10 / scale, viewportTopLeft.y + 195 / scale)
-      // context.fill();
+      context.fill();
 
-      context.fillStyle = "red"
-      context.strokeStyle = "red"
-      context.lineWidth = 4
-
+      
       if (distanceConfiguration?.start) {
+        context.moveTo(
+          distanceConfiguration.start[0] - 5,
+          distanceConfiguration.start[1] - 47,
+        )
+        context.fillStyle = "red"
         context.arc(
           distanceConfiguration.start[0] - 5,
           distanceConfiguration.start[1] - 47,
@@ -102,6 +152,8 @@ function App() {
           )
           context.fill()
           context.beginPath()
+          context.strokeStyle = 'red'
+          context.lineWidth = 4
           context.moveTo(
             distanceConfiguration.start[0] - 5,
             distanceConfiguration.start[1] - 47
@@ -110,8 +162,8 @@ function App() {
             distanceConfiguration.end[0] - 5,
             distanceConfiguration.end[1] - 47
           )
-          context.stroke()
           context.closePath()
+          context.stroke()
         }
       }
 
@@ -196,16 +248,24 @@ function App() {
         >
           Draw path
         </button>
-        <button onClick={() => setPath({
-          finished: false,
-          points: []
-        })}>
+        <button
+          style={{
+            height: '100%'
+          }}
+          onClick={() => setPath({
+            finished: false,
+            points: []
+          })}
+        >
           Clear path
+        </button>
+        <button onClick={() => setReload(Date.now())}>
+          Rerender
         </button>
       </div>
       <Canvas
         draw={draw}
-        update={JSON.stringify(distanceConfiguration) + JSON.stringify(path)}
+        update={JSON.stringify(distanceConfiguration) + JSON.stringify(path) + reload}
         mode={mode}
         canvasHeight={screenSize.height - controlHeight}
         canvasWidth={screenSize.width}
@@ -296,6 +356,15 @@ const pathDistance = (path: PathConfiguration, pixelToMiles: number): number => 
     lastPoint = currPoint
   }
   return totalDistance
+}
+
+const drawHexagon = (x: number, y: number, r: number, ctx: CanvasRenderingContext2D) => {
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    ctx.lineTo(x + r * Math.cos((Math.PI / 3) * i), y + r * Math.sin((Math.PI / 3) * i));
+  }
+  ctx.closePath();
+  ctx.stroke();
 }
 
 export default App;
