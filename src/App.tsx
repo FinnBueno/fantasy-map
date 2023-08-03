@@ -96,12 +96,6 @@ function App() {
               startY + y > viewportTopLeft.y + (ref!.current!.offsetHeight / scale) * 2 + 20
 
             ) continue
-            // context.strokeRect(
-            //   startX + x,
-            //   startY + y - 4,
-            //   hexWidth,
-            //   hexWidth,
-            // )
             drawHexagon(
               startX + x,
               startY + y - 4 + (i % 2 === 0 ? 0 : heightDiffPerHex),
